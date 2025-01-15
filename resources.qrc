@@ -1,5 +1,7 @@
 <RCC>
     <qresource>
         <file>resources/icons/SVGForge_icon.png</file>
+        <file>resources/buttons/OpenFolder.svg</file>
+        <file>resources/buttons/Export.svg</file>
     </qresource>
 </RCC>

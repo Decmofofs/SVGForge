@@ -2,6 +2,10 @@
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QImage>
+#include "SVGNode.h"
+#include "XMLParser.h"
+#include "GlobalData.h"
+#include "HelperFunctions.h"
 
 SVGRenderWorker::SVGRenderWorker(QObject *parent)
     : QObject(parent)
@@ -21,29 +25,21 @@ void SVGRenderWorker::renderSVG(const QString &filePath)
 
 QPixmap SVGRenderWorker::renderSVGFile(const QString &filePath)
 {
-    // 这是具体渲染的占位实现
-    QSize targetSize(400, 300); // 假设渲染目标尺寸
-    QPixmap pixmap(targetSize);
+    QPixmap pixmap;
     pixmap.fill(Qt::black);
 
-    // 使用 QSvgRenderer 渲染 SVG
-    //QSvgRenderer svgRenderer(filePath);
-    // if (svgRenderer.isValid()) {
-    //     QPainter painter(&pixmap);
-    //     svgRenderer.render(&painter);
-    // } else {
-    //     // 渲染失败时返回一个错误图像或日志
-    //     pixmap.fill(Qt::red);
-    // }
 
-    QSvgRenderer svgRenderer(filePath);
-    pixmap = QPixmap(svgRenderer.defaultSize());
-    pixmap.fill(Qt::transparent);
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing); // 抗锯齿
-    painter.setRenderHint(QPainter::TextAntialiasing); // 文本抗锯齿
 
-    svgRenderer.render(&painter);
+    XMLParser parser(filePath);
+
+    SVGNode *root = parser.parse();
+
+    globalTransformMatrix = getScale(root);
+    auto userScale = scale3x3(scale, scale);
+    globalTransformMatrix = globalTransformMatrix * userScale;
+
+    computeTransform(root);
+
 
     return pixmap;
 }

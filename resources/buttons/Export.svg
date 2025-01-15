@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"> 
+  <!-- 文件形状 -->
+  <rect x="24.53" y="11.72" width="46.88" height="70.31" rx="3.91" fill="none" stroke="#000" stroke-width="1.95"/>
+  <polyline points="51.88,11.72 71.41,11.72 71.41,31.25" fill="none" stroke="#000" stroke-width="1.95"/>
+
+  <!-- 导出箭头 -->
+  <line x1="48.36" y1="58.59" x2="48.36" y2="74.22" stroke="#000" stroke-width="1.95" stroke-linecap="round"/>
+  <polygon points="42.11,68.75 48.36,74.22 54.61,68.75" fill="#000"/>
+
+  <!-- 下方外框象征导出 -->
+  <line x1="36.25" y1="78.13" x2="59.69" y2="78.13" stroke="#000" stroke-width="1.95" stroke-linecap="round"/>
+</svg>

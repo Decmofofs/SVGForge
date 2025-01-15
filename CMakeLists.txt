@@ -27,6 +27,15 @@ set(PROJECT_SOURCES
         src/widget/MainMenuWidget.cpp
         include/SVGRenderWorker.h
         src/svg/SVGRenderWorker.cpp
+        include/GlobalData.h
+        include/SVGElements.h
+        include/SVGAttributes.h
+        include/SVGNode.h
+        src/svg/SVGNode.cpp
+        include/XMLParser.h
+        src/xml/XMLParser.cpp
+        include/HelperFunctions.h
+        src/helper/HelperFunctions.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -83,3 +92,9 @@ if(WIN32)
     set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.rc")
     target_sources(SVGForge PRIVATE ${APP_ICON_RESOURCE_WINDOWS})
 endif()
+
+qt_add_resources(SVGForge "resources.qrc"
+        PREFIX "/" FILES
+        resources/buttons/OpenFolder.svg
+        resources/buttons/Export.svg
+)
