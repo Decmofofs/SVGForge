@@ -91,7 +91,7 @@ void MainMenuWidget::openFileDialog() {
 }
 
 void MainMenuWidget::exportFileDialog() {
-    // 打开文件资源管理器并过滤文件类型
+
     if (renderFinished == 0) {
         QMessageBox::warning(this, "警告", "请先打开一个 SVG 文件并等待渲染完成", QMessageBox::Ok);
         return;

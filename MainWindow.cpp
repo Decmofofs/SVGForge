@@ -62,22 +62,19 @@ void MainWindow::adjustMenuSize() {
 }
 
 void MainWindow::setupConnections() {
-    // 菜单选择文件信号连接到渲染 Worker 的槽
+
     connect(menuWidget, &MainMenuWidget::fileSelected, svgRenderWorker, &SVGRenderWorker::renderSVG);
 
-    // 渲染完成信号连接到界面更新槽
     connect(svgRenderWorker, &SVGRenderWorker::renderFinished, this, [this](const QPixmap &pixmap) {
         imageWidget->setImage(pixmap);
         *globalPix = pixmap;
         renderFinished = 1;
     });
 
-    // 渲染线程启动日志（可选）
     connect(svgRenderThread, &QThread::started, []() {
         qDebug() << "Render thread started.";
     });
 
-    // 渲染线程结束信号连接到清理（可选）
     connect(svgRenderThread, &QThread::finished, []() {
         qDebug() << "Render thread finished.";
     });
