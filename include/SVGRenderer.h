@@ -1,7 +1,3 @@
-//
-// Created by Decmo on 25-1-16.
-//
-
 #ifndef SVGRENDERER_H
 #define SVGRENDERER_H
 

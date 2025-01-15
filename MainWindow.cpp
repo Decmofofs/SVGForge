@@ -8,16 +8,11 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       svgRenderThread(new QThread),
-      svgRenderWorker(new SVGRenderWorker)
-{
+      svgRenderWorker(new SVGRenderWorker) {
 
-
-    // 初始化菜单和图片显示区域
     menuWidget = new MainMenuWidget(this);
     imageWidget = new ImageDisplayWidget(this);
 
-
-    // 设置主窗口的最小尺寸
     setMinimumSize(1000, 800);
 
     svgRenderWorker->moveToThread(svgRenderThread);
@@ -27,43 +22,35 @@ MainWindow::MainWindow(QWidget *parent)
     svgRenderThread->start();
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
+void MainWindow::resizeEvent(QResizeEvent *event) {
     QMainWindow::resizeEvent(event);
 
-    // 调整图片显示区域大小
     adjustImageDisplaySize();
     adjustMenuSize();
 }
 
-void MainWindow::showEvent(QShowEvent *event)
-{
+void MainWindow::showEvent(QShowEvent *event) {
     QMainWindow::showEvent(event);
 
-    // 调整图片显示区域大小
     adjustImageDisplaySize();
     adjustMenuSize();
 }
 
-void MainWindow::adjustImageDisplaySize()
-{
-    // 获取右侧区域的大小
+void MainWindow::adjustImageDisplaySize() {
+
     int rightWidth = static_cast<int>(this->width()*0.75);
     int rightHeight = static_cast<int>(this->height());
 
-    // 计算 ImageDisplayWidget 的宽度和高度（80%）
     int displayWidth = static_cast<int>(rightWidth * 0.8);
     int displayHeight = static_cast<int>(rightHeight * 0.8);
 
-    // 设置 ImageDisplayWidget 的固定大小
     imageWidget->setFixedSize(displayWidth, displayHeight);
 
     imageWidget->move(static_cast<int>(rightWidth*0.1+this->width()*0.25), static_cast<int>(rightHeight*0.1));
 }
 
-void MainWindow::adjustMenuSize()
-{
-    // 获取左侧区域的大小
+void MainWindow::adjustMenuSize() {
+
     int leftWidth = static_cast<int>(this->width()*0.325);
     int leftHeight = static_cast<int>(this->height());
 
@@ -74,8 +61,7 @@ void MainWindow::adjustMenuSize()
     menuWidget->move(static_cast<int>(leftWidth*0.1),static_cast<int>(leftHeight*0.1));
 }
 
-void MainWindow::setupConnections()
-{
+void MainWindow::setupConnections() {
     // 菜单选择文件信号连接到渲染 Worker 的槽
     connect(menuWidget, &MainMenuWidget::fileSelected, svgRenderWorker, &SVGRenderWorker::renderSVG);
 
@@ -97,8 +83,7 @@ void MainWindow::setupConnections()
     });
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     svgRenderThread->quit();
     svgRenderThread->wait();
     delete svgRenderThread;

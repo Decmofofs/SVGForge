@@ -1,7 +1,3 @@
-//
-// Created by Decmo on 25-1-15.
-//
-
 #ifndef GLOBALDATA_H
 #define GLOBALDATA_H
 

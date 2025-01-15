@@ -6,8 +6,7 @@
 #include <QPixmap>
 #include <QVBoxLayout>
 
-class ImageDisplayWidget : public QWidget
-{
+class ImageDisplayWidget : public QWidget {
     Q_OBJECT
 
 public:
@@ -15,7 +14,7 @@ public:
     void setImage(const QPixmap &pixmap);
 
 private:
-    QLabel *imageLabel; // 用于显示图片的标签
+    QLabel *imageLabel;
 };
 
 #endif // IMAGEDISPLAYWIDGET_H

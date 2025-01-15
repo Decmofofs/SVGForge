@@ -9,11 +9,9 @@ SVGNode::SVGNode(SVGElements type)
     : type(type),transformMatrix(glm::mat3(1.0f)) {}
 
 SVGNode::~SVGNode() {
-    // 删除所有子节点，避免内存泄漏
     for (SVGNode* child : children) {
         delete child;
     }
-
 }
 
 void SVGNode::setAttribute(const std::string& name, const std::string& value) {

@@ -11,8 +11,7 @@
 #include <vector>
 inline void fillPixel(std::vector<std::vector<glm::vec4>>& renderBuffer,
                       int x, int y,
-                      const glm::vec4& color)
-{
+                      const glm::vec4& color) {
     int rWidth = static_cast<int>(renderBuffer.size());
     if (rWidth == 0) return;
     int rHeight = static_cast<int>(renderBuffer[0].size());
@@ -89,8 +88,7 @@ void drawRect(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
               const glm::mat3& transform,
               int rWidth,
-              int rHeight)
-{
+              int rHeight) {
     float x = getFloatAttribute(node, "x");
     float y = getFloatAttribute(node, "y");
     float w = getFloatAttribute(node, "width");
@@ -99,7 +97,7 @@ void drawRect(const SVGNode* node,
     glm::vec4 color = getFillColor(node);
     qInfo() << x << y << w << h;
     if (color.a == 0.0f) {
-        // alpha = 0 或者 fill="none"，不做任何填充
+
         return;
     }
 
@@ -126,11 +124,10 @@ void drawRect(const SVGNode* node,
             if (!isInPolygon(px,py, {topLeft, topRight, bottomRight, bottomLeft})) {
                 continue;
             }
-            // 应用 transform
+
             glm::vec3 localPos(px, py, 1.0f);
             glm::vec3 worldPos = localPos;
 
-            // 取整后填充
             int finalX = static_cast<int>(std::round(worldPos.x));
             int finalY = static_cast<int>(std::round(worldPos.y));
 
@@ -143,8 +140,7 @@ void drawCircle(const SVGNode* node,
                 std::vector<std::vector<glm::vec4>>& renderBuffer,
                 const glm::mat3& transform,
                 int rWidth,
-                int rHeight)
-{
+                int rHeight) {
     float cx = getFloatAttribute(node, "cx");
     float cy = getFloatAttribute(node, "cy");
     float r  = getFloatAttribute(node, "r");
@@ -159,13 +155,12 @@ void drawCircle(const SVGNode* node,
     float newR = glm::distance(newC, radiusPoint);
     float newCx = newC.x;
     float newCy = newC.y;
-    // 取圆的外包矩形 [cx-r, cx+r] x [cy-r, cy+r]
+
     int minX = static_cast<int>(std::floor(newCx - newR));
     int maxX = static_cast<int>(std::ceil(newCx + newR));
     int minY = static_cast<int>(std::floor(newCy - newR));
     int maxY = static_cast<int>(std::ceil(  newCy + newR));
 
-    // 像素级判断是否落在圆内
     for (int px = minX; px <= maxX; ++px) {
         for (int py = minY; py <= maxY; ++py) {
 
@@ -187,8 +182,7 @@ void drawLine(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
               const glm::mat3& transform,
               int rWidth,
-              int rHeight)
-{
+              int rHeight) {
     float x1 = getFloatAttribute(node, "x1");
     float y1 = getFloatAttribute(node, "y1");
     float x2 = getFloatAttribute(node, "x2");
@@ -233,8 +227,7 @@ void drawEllipse(const SVGNode* node,
                  std::vector<std::vector<glm::vec4>>& renderBuffer,
                  const glm::mat3& transform,
                  int rWidth,
-                 int rHeight)
-{
+                 int rHeight) {
     float cx = getFloatAttribute(node, "cx");
     float cy = getFloatAttribute(node, "cy");
     float rx = getFloatAttribute(node, "rx");
@@ -279,9 +272,8 @@ void drawPath(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
               const glm::mat3& transform,
               int rWidth,
-              int rHeight)
-{
-    // TODO: 解析 d 属性 -> 拆分命令 -> 逐段绘制
+              int rHeight) {
+    // TODO:
     std::cout << "[drawPath] Not implemented.\n";
 }
 
@@ -289,8 +281,7 @@ void drawPolygon(const SVGNode* node,
                  std::vector<std::vector<glm::vec4>>& renderBuffer,
                  const glm::mat3& transform,
                  int rWidth,
-                 int rHeight)
-{
+                 int rHeight) {
 
     std::vector<glm::vec2>  points;
     std::string pointsStr = node->getAttribute("points");
@@ -338,9 +329,8 @@ void drawPolyline(const SVGNode* node,
                   std::vector<std::vector<glm::vec4>>& renderBuffer,
                   const glm::mat3& transform,
                   int rWidth,
-                  int rHeight)
-{
-    // 类似 polygon，但不做填充
+                  int rHeight) {
+
     std::vector<glm::vec2>  points;
     std::string pointsStr = node->getAttribute("points");
 
@@ -403,16 +393,14 @@ void drawText(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
               const glm::mat3& transform,
               int rWidth,
-              int rHeight)
-{
+              int rHeight) {
     // Too Difficult for pixel-level rendering
 }
 
 static void renderNode(SVGNode* node,
                        std::vector<std::vector<glm::vec4>>& renderBuffer,
                        int rWidth,
-                       int rHeight)
-{
+                       int rHeight) {
     if (!node) return;
 
     SVGElements type = node->getType();
@@ -459,8 +447,7 @@ static void renderNode(SVGNode* node,
 void SVGRenderer(std::vector<std::vector<glm::vec4>>& renderBuffer,
                  SVGNode* root,
                  int rWidth,
-                 int rHeight)
-{
+                 int rHeight) {
     if (!root) return;
 
     renderNode(root, renderBuffer, rWidth, rHeight);

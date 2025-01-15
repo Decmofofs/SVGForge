@@ -1,7 +1,3 @@
-//
-// Created by Decmo on 25-1-15.
-//
-
 #ifndef SVGATTRIBUTES_H
 #define SVGATTRIBUTES_H
 enum class SVGAttributes{

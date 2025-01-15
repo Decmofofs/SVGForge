@@ -1,6 +1,3 @@
-//
-// Created by Decmo on 25-1-15.
-//
 
 #ifndef SVGELEMENTS_H
 #define SVGELEMENTS_H

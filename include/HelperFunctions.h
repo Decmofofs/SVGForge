@@ -1,7 +1,3 @@
-//
-// Created by Decmo on 25-1-16.
-//
-
 #ifndef HELPERFUNCTIONS_H
 #define HELPERFUNCTIONS_H
 #include <glm/glm.hpp>

@@ -6,7 +6,7 @@
 #include <string>
 #include <glm/glm.hpp>
 
-// 定义 SVG 颜色表：147 种预定义颜色
+// 147 predefined SVG colors
 std::map<std::string, glm::vec4> svgColorTable = {
     {"aliceblue", glm::vec4(240, 248, 255, 255) / 255.0f},
     {"antiquewhite", glm::vec4(250, 235, 215, 255) / 255.0f},

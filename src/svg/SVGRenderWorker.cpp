@@ -9,22 +9,18 @@
 #include "SVGRenderer.h"
 #include <QDebug>
 SVGRenderWorker::SVGRenderWorker(QObject *parent)
-    : QObject(parent)
-
-{
+    : QObject(parent) {
 
 }
 
-void SVGRenderWorker::renderSVG(const QString &filePath)
-{
+void SVGRenderWorker::renderSVG(const QString &filePath) {
 
     QPixmap pixmap = renderSVGFile(filePath);
 
     emit renderFinished(pixmap);
 }
 
-QPixmap SVGRenderWorker::renderSVGFile(const QString &filePath)
-{
+QPixmap SVGRenderWorker::renderSVGFile(const QString &filePath) {
     QPixmap pixmap;
     pixmap.fill(Qt::black);
 
