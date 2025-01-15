@@ -8,23 +8,20 @@
 #include <QDebug>
 #include "GlobalData.h"
 #include <PreDefinedColors.h>
-// ================ 工具函数：渲染缓冲区访问 ================== //
-
-/// 填充像素 (x, y)，要求 0 <= x < rWidth, 0 <= y < rHeight
+#include <vector>
 inline void fillPixel(std::vector<std::vector<glm::vec4>>& renderBuffer,
                       int x, int y,
                       const glm::vec4& color)
 {
-    int rHeight = static_cast<int>(renderBuffer.size());
-    if (rHeight == 0) return;
-    int rWidth = static_cast<int>(renderBuffer[0].size());
+    int rWidth = static_cast<int>(renderBuffer.size());
+    if (rWidth == 0) return;
+    int rHeight = static_cast<int>(renderBuffer[0].size());
 
     if (x >= 0 && x < rWidth && y >= 0 && y < rHeight) {
         renderBuffer[x][y] = color;
     }
 }
 
-/// 从节点中获取某个属性的浮点数值，若属性不存在则返回默认值
 inline float getFloatAttribute(const SVGNode* node, const std::string& name, float defaultVal = 0.0f) {
     std::string valStr = node->getAttribute(name);
     if (valStr.empty()) {
@@ -33,16 +30,15 @@ inline float getFloatAttribute(const SVGNode* node, const std::string& name, flo
     return std::stof(valStr);
 }
 
-/// 从节点中获取 "fill" 属性对应的颜色，若无则默认返回白色
 inline glm::vec4 getFillColor(const SVGNode* node) {
-    // 简化处理，只解析类似 "#RRGGBB" 或 "rgb(r, g, b)"，不含透明度
+
     std::string fillStr = node->getAttribute("fill");
     if (fillStr.empty() || fillStr == "none") {
-        return glm::vec4(0.0f);  // 无填充
+        return glm::vec4(0.0f);
     }
 
     if (fillStr[0] == '#') {
-        // 假设格式 "#RRGGBB"
+        // "#RRGGBB"
         if (fillStr.size() == 7) {
             int r = std::stoi(fillStr.substr(1,2), nullptr, 16);
             int g = std::stoi(fillStr.substr(3,2), nullptr, 16);
@@ -59,12 +55,10 @@ inline glm::vec4 getFillColor(const SVGNode* node) {
         return glm::vec4(r,g,b,a);
     }
 
-    return glm::vec4({255,0,0,0.5});
+    return glm::vec4({0,0,0,0});
 }
 
-// ================ 简单形状绘制示例 ================== //
 
-// 1. 绘制 <rect>
 void drawRect(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
               const glm::mat3& transform,
@@ -83,21 +77,32 @@ void drawRect(const SVGNode* node,
         return;
     }
 
-    // 简单演示：逐像素填充矩形范围
-    // （真实 SVG 要考虑 transform 后的四点再取 bounding box，这里只做最小示例）
     int x0 = static_cast<int>(std::floor(x));
     int y0 = static_cast<int>(std::floor(y));
     int x1 = static_cast<int>(std::ceil(x + w));
     int y1 = static_cast<int>(std::ceil(y + h));
 
-    // 应用 transform，将像素坐标转换后再填充
-    // 实际中要对矩形四个角做 transform，再取最小外包框，这里仅做非常简化处理
-    qInfo() << x0 << y0 << x1 << y1;
-    for (int px = x0; px < x1; ++px) {
-        for (int py = y0; py < y1; ++py) {
+    glm::vec2 topLeft = transform * glm::vec3{x0, y0, 1.0f};
+    glm::vec2 topRight = transform * glm::vec3{x1, y0, 1.0f};
+    glm::vec2 bottomLeft = transform * glm::vec3{x0, y1, 1.0f};
+    glm::vec2 bottomRight = transform * glm::vec3{x1, y1, 1.0f};
+
+    float minX = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+    float maxX = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+    float minY = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+    float maxY = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+
+    qInfo() << minX << maxX << minY << maxY << "FEAFEF";
+
+    for (int px = minX; px < maxX; ++px) {
+        for (int py = minY; py < maxY; ++py) {
+
+            if (!isInPolygon(px,py, {topLeft, topRight, bottomRight, bottomLeft})) {
+                continue;
+            }
             // 应用 transform
             glm::vec3 localPos(px, py, 1.0f);
-            glm::vec3 worldPos = transform * localPos;
+            glm::vec3 worldPos = localPos;
 
             // 取整后填充
             int finalX = static_cast<int>(std::round(worldPos.x));
@@ -108,7 +113,6 @@ void drawRect(const SVGNode* node,
     }
 }
 
-// 2. 绘制 <circle>
 void drawCircle(const SVGNode* node,
                 std::vector<std::vector<glm::vec4>>& renderBuffer,
                 const glm::mat3& transform,
@@ -124,22 +128,27 @@ void drawCircle(const SVGNode* node,
         return;
     }
 
+    glm::vec3 newC = transform * glm::vec3(cx, cy, 1.0f);
+    glm::vec3 radiusPoint = transform * glm::vec3(cx + r, cy, 1.0f);
+    float newR = glm::distance(newC, radiusPoint);
+    float newCx = newC.x;
+    float newCy = newC.y;
     // 取圆的外包矩形 [cx-r, cx+r] x [cy-r, cy+r]
-    int minX = static_cast<int>(std::floor(cx - r));
-    int maxX = static_cast<int>(std::ceil(cx + r));
-    int minY = static_cast<int>(std::floor(cy - r));
-    int maxY = static_cast<int>(std::ceil(cy + r));
+    int minX = static_cast<int>(std::floor(newCx - newR));
+    int maxX = static_cast<int>(std::ceil(newCx + newR));
+    int minY = static_cast<int>(std::floor(newCy - newR));
+    int maxY = static_cast<int>(std::ceil(  newCy + newR));
 
     // 像素级判断是否落在圆内
     for (int px = minX; px <= maxX; ++px) {
         for (int py = minY; py <= maxY; ++py) {
-            // 判断 (px,py) 到 (cx,cy) 的距离
-            float dx = px - cx;
-            float dy = py - cy;
-            if (dx*dx + dy*dy <= r*r) {
-                // 应用 transform
+
+            float dx = px - newCx;
+            float dy = py - newCy;
+            if (dx*dx + dy*dy <= newR*newR) {
+
                 glm::vec3 localPos(px, py, 1.0f);
-                glm::vec3 worldPos = transform * localPos;
+                glm::vec3 worldPos = localPos;
                 int finalX = static_cast<int>(std::round(worldPos.x));
                 int finalY = static_cast<int>(std::round(worldPos.y));
                 fillPixel(renderBuffer, finalX, finalY, color);
@@ -148,7 +157,6 @@ void drawCircle(const SVGNode* node,
     }
 }
 
-// 3. 绘制 <line>
 void drawLine(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
               const glm::mat3& transform,
@@ -159,12 +167,9 @@ void drawLine(const SVGNode* node,
     float y1 = getFloatAttribute(node, "y1");
     float x2 = getFloatAttribute(node, "x2");
     float y2 = getFloatAttribute(node, "y2");
-
-    // 这里不解析 stroke 属性，仅示意用白色
+    // 颜色是黑色
     glm::vec4 color(1.0f);
 
-    // 简化：Bresenham 或 DDA 画线
-    // 1) 做 transform -> (worldX1, worldY1), (worldX2, worldY2)
     glm::vec3 pt1 = transform * glm::vec3(x1, y1, 1.0f);
     glm::vec3 pt2 = transform * glm::vec3(x2, y2, 1.0f);
 
@@ -173,7 +178,6 @@ void drawLine(const SVGNode* node,
     int ix2 = static_cast<int>(std::round(pt2.x));
     int iy2 = static_cast<int>(std::round(pt2.y));
 
-    // 简易的 Bresenham 算法
     int dx = std::abs(ix2 - ix1), sx = ix1 < ix2 ? 1 : -1;
     int dy = -std::abs(iy2 - iy1), sy = iy1 < iy2 ? 1 : -1;
     int err = dx + dy;
@@ -195,16 +199,51 @@ void drawLine(const SVGNode* node,
     }
 }
 
-// 4. 其他类型 (Ellipse / Polygon / Polyline / Path / Text / G / Svg / Unknown)
-//    - 这里仅示意，留空或做简单打印，可自行扩展
+
 void drawEllipse(const SVGNode* node,
                  std::vector<std::vector<glm::vec4>>& renderBuffer,
                  const glm::mat3& transform,
                  int rWidth,
                  int rHeight)
 {
-    // TODO: 与 circle 类似，但要区分 rx, ry
-    std::cout << "[drawEllipse] Not implemented.\n";
+    float cx = getFloatAttribute(node, "cx");
+    float cy = getFloatAttribute(node, "cy");
+    float rx = getFloatAttribute(node, "rx");
+    float ry = getFloatAttribute(node, "ry");
+
+    glm::vec4 color = getFillColor(node);
+    if (color.a == 0.0f) {
+        return;
+    }
+
+    glm::vec3 newC = transform * glm::vec3(cx, cy, 1.0f);
+    glm::vec3 radiusPoint = transform * glm::vec3(cx + rx, cy, 1.0f);
+    float newRx = glm::distance(newC, radiusPoint);
+    radiusPoint = transform * glm::vec3(cx, cy + ry, 1.0f);
+    float newRy = glm::distance(newC, radiusPoint);
+    float newCx = newC.x;
+    float newCy = newC.y;
+
+    int minX = static_cast<int>(std::floor(newCx - newRx));
+    int maxX = static_cast<int>(std::ceil(newCx + newRx));
+    int minY = static_cast<int>(std::floor(newCy - newRy));
+    int maxY = static_cast<int>(std::ceil(newCy + newRy));
+
+    for (int px = minX; px <= maxX; ++px) {
+        for (int py = minY; py <= maxY; ++py) {
+
+            float dx = (px - newCx) / newRx;
+            float dy = (py - newCy) / newRy;
+            if (dx*dx + dy*dy <= 1.0f) {
+
+                glm::vec3 localPos(px, py, 1.0f);
+                glm::vec3 worldPos = localPos;
+                int finalX = static_cast<int>(std::round(worldPos.x));
+                int finalY = static_cast<int>(std::round(worldPos.y));
+                fillPixel(renderBuffer, finalX, finalY, color);
+            }
+        }
+    }
 }
 
 void drawPath(const SVGNode* node,
@@ -223,8 +262,48 @@ void drawPolygon(const SVGNode* node,
                  int rWidth,
                  int rHeight)
 {
-    // TODO: 解析 points -> 扫描线填充
-    std::cout << "[drawPolygon] Not implemented.\n";
+
+    std::vector<glm::vec2>  points;
+    std::string pointsStr = node->getAttribute("points");
+    //把所有逗号换成空格
+    std::replace(pointsStr.begin(), pointsStr.end(), ',', ' ');
+    std::vector<float> nums;
+    //将pointsStr中的数字提取出来
+    std::istringstream iss(pointsStr);
+    for (std::string s; iss >> s;) {
+        nums.push_back(std::stof(s));
+    }
+    //将提取出来的数字转换为点
+    for (int i = 0; i < nums.size(); i += 2) {
+        glm::vec2 transformedPoint = transform * glm::vec3(nums[i], nums[i + 1], 1.0f);
+        points.push_back(transformedPoint);
+    }
+
+    float minX,minY,maxX,maxY;
+    minX = minY = std::numeric_limits<float>::max();
+    maxX = maxY = std::numeric_limits<float>::min();
+    for (auto& point : points) {
+        minX = std::min(minX, point.x);
+        minY = std::min(minY, point.y);
+        maxX = std::max(maxX, point.x);
+        maxY = std::max(maxY, point.y);
+    }
+    for (auto po : points) {
+        qInfo() << po.x << po.y;
+    }
+    for (int px = static_cast<int>(std::floor(minX)); px <= static_cast<int>(std::ceil(maxX)); ++px) {
+        for (int py = static_cast<int>(std::floor(minY)); py <= static_cast<int>(std::ceil(maxY)); ++py) {
+            if (isInPolygon(px, py, points)) {
+                glm::vec3 localPos(px, py, 1.0f);
+                glm::vec3 worldPos = localPos;
+                int finalX = static_cast<int>(std::round(worldPos.x));
+                int finalY = static_cast<int>(std::round(worldPos.y));
+                fillPixel(renderBuffer, finalX, finalY, getFillColor(node));
+            }
+        }
+    }
+
+
 }
 
 void drawPolyline(const SVGNode* node,
@@ -247,9 +326,6 @@ void drawText(const SVGNode* node,
     std::cout << "[drawText] Not implemented.\n";
 }
 
-// ================ 核心渲染函数 ================== //
-
-/// 递归渲染单个节点
 static void renderNode(SVGNode* node,
                        std::vector<std::vector<glm::vec4>>& renderBuffer,
                        int rWidth,
@@ -257,12 +333,10 @@ static void renderNode(SVGNode* node,
 {
     if (!node) return;
 
-    // 获取节点类型
     SVGElements type = node->getType();
-    // 获取节点的最终变换矩阵
+
     glm::mat3 transform = node->getTransformMatrix();
 
-    // 根据类型分发到具体绘制函数
     switch (type) {
         case SVGElements::Rect:
             drawRect(node, renderBuffer, transform, rWidth, rHeight);
@@ -292,17 +366,14 @@ static void renderNode(SVGNode* node,
         case SVGElements::Svg:
         case SVGElements::Unknown:
         default:
-            // G / Svg / Unknown：自己本身不直接绘制形状，但可能有子节点
             break;
     }
 
-    // 递归渲染子节点
     for (SVGNode* child : node->getChildren()) {
         renderNode(child, renderBuffer, rWidth, rHeight);
     }
 }
 
-/// 对外暴露的渲染接口：渲染整个 root 树
 void SVGRenderer(std::vector<std::vector<glm::vec4>>& renderBuffer,
                  SVGNode* root,
                  int rWidth,
@@ -310,9 +381,5 @@ void SVGRenderer(std::vector<std::vector<glm::vec4>>& renderBuffer,
 {
     if (!root) return;
 
-    // 假设此时 root->transformMatrix 已经通过 computeTransform 等函数计算好
-    // 或者是单位矩阵
-
-    // 从 root 节点开始递归渲染
     renderNode(root, renderBuffer, rWidth, rHeight);
 }

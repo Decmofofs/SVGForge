@@ -1,6 +1,3 @@
-//
-// Created by Decmo on 25-1-16.
-//
 
 #ifndef PREDEFINEDCOLORS_H
 #define PREDEFINEDCOLORS_H
