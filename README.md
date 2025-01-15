@@ -13,7 +13,7 @@ This project is based on Qt 6.8.1 . You can build it with Qt Creator or CMake.
 1. Clone this repository.
 2. Open it with Qt Creator, and build it.
 3. Or, you can configure the tool chain in any IDE and build this project with it.
-
+4. If you want, you can also build it with CMake in a shell/terminal.
 # Usage
 
 1. Run the program.
