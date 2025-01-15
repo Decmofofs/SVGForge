@@ -58,6 +58,32 @@ inline glm::vec4 getFillColor(const SVGNode* node) {
     return glm::vec4({0,0,0,0});
 }
 
+inline glm::vec4 getStrokeColor(const SVGNode * node) {
+    std::string strokeStr = node->getAttribute("stroke");
+    if (strokeStr.empty() || strokeStr == "none") {
+        return glm::vec4(0.0f);
+    }
+    if (strokeStr[0] == '#') {
+        // "#RRGGBB"
+        if (strokeStr.size() == 7) {
+            int r = std::stoi(strokeStr.substr(1,2), nullptr, 16);
+            int g = std::stoi(strokeStr.substr(3,2), nullptr, 16);
+            int b = std::stoi(strokeStr.substr(5,2), nullptr, 16);
+            return glm::vec4(r/255.f, g/255.f, b/255.f, 1.0f);
+        }
+    }
+
+    if (svgColorTable.find(strokeStr) != svgColorTable.end()) {
+        float r = svgColorTable[strokeStr].r;
+        float g = svgColorTable[strokeStr].g;
+        float b = svgColorTable[strokeStr].b;
+        float a = svgColorTable[strokeStr].a;
+        return glm::vec4(r,g,b,a);
+    }
+
+    return glm::vec4({0,0,0,0});
+}
+
 
 void drawRect(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
@@ -167,8 +193,10 @@ void drawLine(const SVGNode* node,
     float y1 = getFloatAttribute(node, "y1");
     float x2 = getFloatAttribute(node, "x2");
     float y2 = getFloatAttribute(node, "y2");
-    // 颜色是黑色
-    glm::vec4 color(1.0f);
+
+
+    std::string stroke = node->getAttribute("stroke");
+    glm::vec4 color = getStrokeColor(node);
 
     glm::vec3 pt1 = transform * glm::vec3(x1, y1, 1.0f);
     glm::vec3 pt2 = transform * glm::vec3(x2, y2, 1.0f);
@@ -178,6 +206,7 @@ void drawLine(const SVGNode* node,
     int ix2 = static_cast<int>(std::round(pt2.x));
     int iy2 = static_cast<int>(std::round(pt2.y));
 
+    // Bresenham
     int dx = std::abs(ix2 - ix1), sx = ix1 < ix2 ? 1 : -1;
     int dy = -std::abs(iy2 - iy1), sy = iy1 < iy2 ? 1 : -1;
     int err = dx + dy;
@@ -265,15 +294,15 @@ void drawPolygon(const SVGNode* node,
 
     std::vector<glm::vec2>  points;
     std::string pointsStr = node->getAttribute("points");
-    //把所有逗号换成空格
+
     std::replace(pointsStr.begin(), pointsStr.end(), ',', ' ');
     std::vector<float> nums;
-    //将pointsStr中的数字提取出来
+
     std::istringstream iss(pointsStr);
     for (std::string s; iss >> s;) {
         nums.push_back(std::stof(s));
     }
-    //将提取出来的数字转换为点
+
     for (int i = 0; i < nums.size(); i += 2) {
         glm::vec2 transformedPoint = transform * glm::vec3(nums[i], nums[i + 1], 1.0f);
         points.push_back(transformedPoint);
@@ -303,7 +332,6 @@ void drawPolygon(const SVGNode* node,
         }
     }
 
-
 }
 
 void drawPolyline(const SVGNode* node,
@@ -312,8 +340,63 @@ void drawPolyline(const SVGNode* node,
                   int rWidth,
                   int rHeight)
 {
-    // TODO: 类似 polygon，但不做填充
-    std::cout << "[drawPolyline] Not implemented.\n";
+    // 类似 polygon，但不做填充
+    std::vector<glm::vec2>  points;
+    std::string pointsStr = node->getAttribute("points");
+
+    std::replace(pointsStr.begin(), pointsStr.end(), ',', ' ');
+    std::vector<float> nums;
+
+    std::istringstream iss(pointsStr);
+    for (std::string s; iss >> s;) {
+        nums.push_back(std::stof(s));
+    }
+
+    for (int i = 0; i < nums.size(); i += 2) {
+        glm::vec2 transformedPoint = transform * glm::vec3(nums[i], nums[i + 1], 1.0f);
+        points.push_back(transformedPoint);
+    }
+
+    float minX,minY,maxX,maxY;
+    minX = minY = std::numeric_limits<float>::max();
+    maxX = maxY = std::numeric_limits<float>::min();
+    for (auto& point : points) {
+        minX = std::min(minX, point.x);
+        minY = std::min(minY, point.y);
+        maxX = std::max(maxX, point.x);
+        maxY = std::max(maxY, point.y);
+    }
+
+    glm::vec4 color = getStrokeColor(node);
+
+    for (int i=0;i<points.size();i++) {
+        // Use Bresenham's line algorithm to draw lines between points
+        int x1 = static_cast<int>(points[i].x);
+        int y1 = static_cast<int>(points[i].y);
+        int x2 = static_cast<int>(points[(i+1)%points.size()].x);
+        int y2 = static_cast<int>(points[(i+1)%points.size()].y);
+
+        int dx = std::abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+        int dy = -std::abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+        int err = dx + dy;
+
+        int x = x1;
+        int y = y1;
+
+        while (true) {
+            fillPixel(renderBuffer, x, y, color);
+            if (x == x2 && y == y2) break;
+            int e2 = 2 * err;
+            if (e2 >= dy) {
+                err += dy;
+                x += sx;
+            }
+            if (e2 <= dx) {
+                err += dx;
+                y += sy;
+            }
+        }
+    }
 }
 
 void drawText(const SVGNode* node,
@@ -322,8 +405,7 @@ void drawText(const SVGNode* node,
               int rWidth,
               int rHeight)
 {
-    // TODO: 实现文字渲染（字体解析、排版等）
-    std::cout << "[drawText] Not implemented.\n";
+    // Too Difficult for pixel-level rendering
 }
 
 static void renderNode(SVGNode* node,
