@@ -83,6 +83,33 @@ inline glm::vec4 getStrokeColor(const SVGNode * node) {
     return glm::vec4({0,0,0,0});
 }
 
+inline void drawLineWithStroke(std::vector<std::vector<glm::vec4>>& renderBuffer,
+                               glm::vec4 color,
+                               int stroke_width,
+                               glm::vec2 S1,
+                               glm::vec2 S2) {
+    glm::vec2 n = glm::normalize(S2 - S1);
+    glm::vec2 o = glm::vec2(n.y, -n.x) * (stroke_width / 2.0f);
+
+    glm::vec2 P1 = S1 + o;
+    glm::vec2 P2 = S2 + o;
+    glm::vec2 P3 = S2 - o;
+    glm::vec2 P4 = S1 - o;
+
+    float minX = std::min({P1.x, P2.x, P3.x, P4.x});
+    float maxX = std::max({P1.x, P2.x, P3.x, P4.x});
+    float minY = std::min({P1.y, P2.y, P3.y, P4.y});
+    float maxY = std::max({P1.y, P2.y, P3.y, P4.y});
+
+    for (int x=minX; x<maxX; ++x) {
+        for (int y=minY; y<maxY; ++y) {
+            if (isInPolygon(x, y, {P1, P2, P3, P4})) {
+                fillPixel(renderBuffer, x, y, color);
+            }
+        }
+    }
+}
+
 
 void drawRect(const SVGNode* node,
               std::vector<std::vector<glm::vec4>>& renderBuffer,
@@ -192,8 +219,45 @@ void drawLine(const SVGNode* node,
     std::string stroke = node->getAttribute("stroke");
     glm::vec4 color = getStrokeColor(node);
 
+    int stroke_width;
+    if (node->getAttribute("stroke-width") == "") {
+        stroke_width = 1;
+    }
+    else {
+        stroke_width =
+        std::stoi(node->getAttribute("stroke-width"));
+    }
+
+
     glm::vec3 pt1 = transform * glm::vec3(x1, y1, 1.0f);
     glm::vec3 pt2 = transform * glm::vec3(x2, y2, 1.0f);
+
+    glm::vec3 n = glm::normalize(pt2 - pt1);
+    glm::vec2 o = glm::vec2(n.y, -n.x) * (stroke_width / 2.0f);
+
+    glm::vec2 P1 = glm::vec2(pt1.x, pt1.y) + o;
+    glm::vec2 P2 = glm::vec2(pt2.x, pt2.y) + o;
+    glm::vec2 P3 = glm::vec2(pt2.x, pt2.y) - o;
+    glm::vec2 P4 = glm::vec2(pt1.x, pt1.y) - o;
+
+    // Same as drawRect
+
+    float minX = std::min({P1.x, P2.x, P3.x, P4.x});
+    float maxX = std::max({P1.x, P2.x, P3.x, P4.x});
+    float minY = std::min({P1.y, P2.y, P3.y, P4.y});
+    float maxY = std::max({P1.y, P2.y, P3.y, P4.y});
+
+    for (int px=minX; px<maxX; ++px) {
+        for (int py=minY; py<maxY; ++py) {
+            if (isInPolygon(px, py, {P1, P2, P3, P4})) {
+                glm::vec3 localPos(px, py, 1.0f);
+                glm::vec3 worldPos = localPos;
+                int finalX = static_cast<int>(std::round(worldPos.x));
+                int finalY = static_cast<int>(std::round(worldPos.y));
+                fillPixel(renderBuffer, finalX, finalY, color);
+            }
+        }
+    }
 
     int ix1 = static_cast<int>(std::round(pt1.x));
     int iy1 = static_cast<int>(std::round(pt1.y));
@@ -284,10 +348,16 @@ void drawPolygon(const SVGNode* node,
                  int rHeight) {
 
     std::vector<glm::vec2>  points;
+
+
     std::string pointsStr = node->getAttribute("points");
 
     std::replace(pointsStr.begin(), pointsStr.end(), ',', ' ');
     std::vector<float> nums;
+
+
+
+
 
     std::istringstream iss(pointsStr);
     for (std::string s; iss >> s;) {
@@ -298,6 +368,31 @@ void drawPolygon(const SVGNode* node,
         glm::vec2 transformedPoint = transform * glm::vec3(nums[i], nums[i + 1], 1.0f);
         points.push_back(transformedPoint);
     }
+
+
+    int isStroke = 0;
+    if (node->getAttribute("stroke") != "") {
+        isStroke = 1;
+    }
+
+    if (isStroke) {
+        glm::vec4 strokeColor = getStrokeColor(node);
+        int stroke_width;
+
+        if (node->getAttribute("stroke-width") == "") {
+            stroke_width = 1;
+        }
+        else {
+            stroke_width =
+            std::stoi(node->getAttribute("stroke-width"));
+        }
+        for (int i=0;i<points.size();i++) {
+            glm::vec2 S1 = points[i];
+            glm::vec2 S2 = points[(i+1)%points.size()];
+            drawLineWithStroke(renderBuffer, strokeColor, stroke_width, S1, S2);
+        }
+    }
+
 
     float minX,minY,maxX,maxY;
     minX = minY = std::numeric_limits<float>::max();
@@ -347,17 +442,32 @@ void drawPolyline(const SVGNode* node,
         points.push_back(transformedPoint);
     }
 
-    float minX,minY,maxX,maxY;
-    minX = minY = std::numeric_limits<float>::max();
-    maxX = maxY = std::numeric_limits<float>::min();
-    for (auto& point : points) {
-        minX = std::min(minX, point.x);
-        minY = std::min(minY, point.y);
-        maxX = std::max(maxX, point.x);
-        maxY = std::max(maxY, point.y);
+    int isStroke = 0;
+    if (node->getAttribute("stroke") != "") {
+        isStroke = 1;
     }
 
     glm::vec4 color = getStrokeColor(node);
+    if (isStroke) {
+
+        int stroke_width;
+        if (node->getAttribute("stroke-width") == "") {
+            stroke_width = 1;
+        }
+        else {
+            stroke_width =
+            std::stoi(node->getAttribute("stroke-width"));
+        }
+        qInfo() << "Polyline Stroke" << stroke_width;
+        for (int i=0;i<points.size();i++) {
+            glm::vec2 S1 = points[i];
+            glm::vec2 S2 = points[(i+1)%points.size()];
+            drawLineWithStroke(renderBuffer, color, stroke_width, S1, S2);
+        }
+    }
+
+
+
 
     for (int i=0;i<points.size();i++) {
         // Use Bresenham's line algorithm to draw lines between points
@@ -365,6 +475,7 @@ void drawPolyline(const SVGNode* node,
         int y1 = static_cast<int>(points[i].y);
         int x2 = static_cast<int>(points[(i+1)%points.size()].x);
         int y2 = static_cast<int>(points[(i+1)%points.size()].y);
+
 
         int dx = std::abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
         int dy = -std::abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
