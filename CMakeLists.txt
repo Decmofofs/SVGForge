@@ -36,6 +36,9 @@ set(PROJECT_SOURCES
         src/xml/XMLParser.cpp
         include/HelperFunctions.h
         src/helper/HelperFunctions.cpp
+        include/SVGRenderer.h
+        src/svg/SVGRenderer.cpp
+        include/PreDefinedColors.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

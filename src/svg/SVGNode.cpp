@@ -42,3 +42,7 @@ SVGElements SVGNode::getType() const {
 void SVGNode::setTransformMatrix(const glm::mat3& matrix) {
     transformMatrix = matrix;
 }
+
+glm::mat3 SVGNode::getTransformMatrix() const {
+    return transformMatrix;
+}

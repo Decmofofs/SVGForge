@@ -4,7 +4,7 @@
 #include "HelperFunctions.h"
 
 #include <algorithm>
-
+#include <QDebug>
 glm::mat3 scale3x3(float scaleX, float scaleY) {
     glm::mat3 scaleMatrix(1.0f); // 单位矩阵
 
@@ -27,6 +27,9 @@ glm::mat3 getScale(const SVGNode* root) {
 
     // 默认宽高为 300x150
     float width = 300.0f, height = 150.0f;
+    // 解析 width 和 height，如果存在
+    if (!widthStr.empty()) width = std::stof(widthStr);
+    if (!heightStr.empty()) height = std::stof(heightStr);
 
     float viewBoxMinX = 0.0f, viewBoxMinY = 0.0f;
     float viewBoxWidth = width, viewBoxHeight = height;
@@ -37,9 +40,6 @@ glm::mat3 getScale(const SVGNode* root) {
     }
 
 
-    // 解析 width 和 height，如果存在
-    if (!widthStr.empty()) width = std::stof(widthStr);
-    if (!heightStr.empty()) height = std::stof(heightStr);
 
     // 计算缩放比例
     float scaleX = width / viewBoxWidth;
@@ -204,4 +204,54 @@ void computeTransform(SVGNode* root)
 
     // 从根节点开始，父矩阵默认为单位阵
     traverse(root, glm::mat3(1.0f));
+}
+
+std::pair<float, float> getWidthAndHeight(const SVGNode* root) {
+    if (!root) {
+        throw std::invalid_argument("Root node is null.");
+    }
+
+    // 获取 width 和 height 属性
+    std::string widthStr = root->getAttribute("width");
+    std::string heightStr = root->getAttribute("height");
+
+    // 如果未定义，返回默认值 0.0
+    float width = widthStr.empty() ? 0.0f : std::stof(widthStr);
+    float height = heightStr.empty() ? 0.0f : std::stof(heightStr);
+
+    return {width, height};
+}
+
+void applyGlobalTransform(SVGNode* node, const glm::mat3& globalTransformMatrix) {
+    if (!node) return;
+
+    // 获取当前节点的 transformMatrix
+    glm::mat3 currentMatrix = node->getTransformMatrix();
+
+    // 更新 transformMatrix：左乘 globalTransformMatrix
+    glm::mat3 updatedMatrix = globalTransformMatrix * currentMatrix;
+    node->setTransformMatrix(updatedMatrix);
+
+    // 递归处理子节点
+    for (SVGNode* child : node->getChildren()) {
+        applyGlobalTransform(child, globalTransformMatrix);
+    }
+}
+
+void vectorToPixmap(std::vector<std::vector<glm::vec4> > &renderBuffer, QPixmap &pixmap) {
+    // 创建 QImage
+    QImage image(renderBuffer[0].size(), renderBuffer.size(), QImage::Format_ARGB32);
+
+    // 将 renderBuffer 中的颜色数据转换到 QImage
+    for (size_t x = 0; x < renderBuffer.size(); x++) {
+        for (size_t y = 0; y < renderBuffer[0].size(); y++) {
+            glm::vec4 color = renderBuffer[x][y];
+            // qInfo() << renderBuffer.size() << renderBuffer[0].size();
+            qInfo() << x << y << color.r << color.g << color.b << color.a;
+            image.setPixelColor(x, y, QColor::fromRgbF(color.r, color.g, color.b, color.a));
+        }
+    }
+
+    // 转换到 QPixmap
+    pixmap = QPixmap::fromImage(image);
 }

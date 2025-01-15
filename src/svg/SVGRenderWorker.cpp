@@ -6,7 +6,8 @@
 #include "XMLParser.h"
 #include "GlobalData.h"
 #include "HelperFunctions.h"
-
+#include "SVGRenderer.h"
+#include <QDebug>
 SVGRenderWorker::SVGRenderWorker(QObject *parent)
     : QObject(parent)
 
@@ -16,10 +17,9 @@ SVGRenderWorker::SVGRenderWorker(QObject *parent)
 
 void SVGRenderWorker::renderSVG(const QString &filePath)
 {
-    // 这里可以异步调用 renderSVGFile 方法
+
     QPixmap pixmap = renderSVGFile(filePath);
 
-    // 渲染完成后，发出信号
     emit renderFinished(pixmap);
 }
 
@@ -35,11 +35,22 @@ QPixmap SVGRenderWorker::renderSVGFile(const QString &filePath)
     SVGNode *root = parser.parse();
 
     globalTransformMatrix = getScale(root);
+
     auto userScale = scale3x3(scale, scale);
     globalTransformMatrix = globalTransformMatrix * userScale;
 
     computeTransform(root);
+    applyGlobalTransform(root, globalTransformMatrix);
 
+    auto [width, height] = getWidthAndHeight(root);
+    width = width * scale;
+    height = height * scale;
+
+    std::vector<std::vector<glm::vec4> > renderBuffer(width, std::vector<glm::vec4>(height, glm::vec4(0.0f)));
+
+    SVGRenderer(renderBuffer, root, width, height);
+
+    vectorToPixmap(renderBuffer, pixmap);
 
     return pixmap;
 }

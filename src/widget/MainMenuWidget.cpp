@@ -58,6 +58,7 @@ MainMenuWidget::MainMenuWidget(QWidget *parent)
 
     scaleSlider = new QSlider(Qt::Horizontal, this);
     scaleSlider->setRange(1, 8);
+    scaleSlider->setValue(static_cast<int>(scale)*100/50);
     scaleLabel = new QLabel("缩放比例: 100%", this);
 
 

@@ -24,6 +24,7 @@ public:
     SVGElements getType() const;
 
     void setTransformMatrix(const glm::mat3& matrix);
+    glm::mat3 getTransformMatrix() const;
 
 private:
     SVGElements type;                          // 节点类型
