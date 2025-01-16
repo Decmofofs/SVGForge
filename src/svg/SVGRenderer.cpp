@@ -110,19 +110,44 @@ inline void drawLineWithStroke(std::vector<std::vector<glm::vec4>>& renderBuffer
     }
 }
 
-inline void drawBezier2(std::vector<std::vector<glm::vec4>>& renderBuffer,
-                        glm::vec4 color,
-                        glm::vec2 P0,
-                        glm::vec2 P1,
-                        glm::vec2 P2) {
-    float t = 0.0f;
-    while (t <= 1.0f) {
-        glm::vec2 Q = (1-t)*(1-t)*P0 + 2*(1-t)*t*P1 + t*t*P2;
-        fillPixel(renderBuffer, static_cast<int>(Q.x), static_cast<int>(Q.y), color);
-        t += 0.001f;
+
+
+inline void drawFilledPolygon(std::vector<std::vector<glm::vec4>> & renderBuffer,
+                            glm::vec4 color,
+                            std::vector<glm::vec2> points) {
+    if (points.back() == points.front()) {
+        points.pop_back();
+    }
+    float minX,minY,maxX,maxY;
+    minX = minY = std::numeric_limits<float>::max();
+    maxX = maxY = std::numeric_limits<float>::min();
+    for (auto& point : points) {
+        minX = std::min(minX, point.x);
+        minY = std::min(minY, point.y);
+        maxX = std::max(maxX, point.x);
+        maxY = std::max(maxY, point.y);
+    }
+    for (int px = static_cast<int>(std::floor(minX)); px <= static_cast<int>(std::ceil(maxX)); ++px) {
+        for (int py = static_cast<int>(std::floor(minY)); py <= static_cast<int>(std::ceil(maxY)); ++py) {
+            if (isInPolygon(px, py, points)) {
+                glm::vec3 localPos(px, py, 1.0f);
+                glm::vec3 worldPos = localPos;
+                int finalX = static_cast<int>(std::round(worldPos.x));
+                int finalY = static_cast<int>(std::round(worldPos.y));
+                fillPixel(renderBuffer, finalX, finalY, color);
+            }
+        }
     }
 }
 
+inline void drawStrokePolyline(std::vector<std::vector<glm::vec4>> & renderBuffer,
+                                glm::vec4 color,
+                                int stroke_width,
+                                const std::vector<glm::vec2> & points) {
+    for (int i=0;i<points.size();i++) {
+        drawLineWithStroke(renderBuffer, color, stroke_width, points[i], points[(i+1)%points.size()]);
+    }
+}
 
 
 void drawRect(const SVGNode* node,
@@ -351,8 +376,107 @@ void drawPath(const SVGNode* node,
               const glm::mat3& transform,
               int rWidth,
               int rHeight) {
-    // TODO:
-    std::cout << "[drawPath] Not implemented.\n";
+    std::string d = node->getAttribute("d");
+    std::replace(d.begin(), d.end(), ',', ' ');
+    std::vector<float> nums;
+    std::vector<char> commands;
+
+    std::istringstream iss(d);
+    std::string s;
+    while(iss>>s) {
+        if (s.size()==1 && !isdigit(s[0]) && s[0]!='.') {
+            commands.push_back(s[0]);
+        }
+        else {
+            nums.push_back(std::stof(s));
+        }
+    }
+    qDebug() << "Translation";
+
+    std::vector<glm::vec2> points;
+
+    int num_index = 0;
+    int commands_index = 0;
+
+    while (commands_index < commands.size()) {
+        char command = commands[commands_index];
+        if (command == 'M') {
+            points.push_back(glm::vec2(nums[num_index], nums[num_index+1]));
+            num_index += 2;
+            commands_index++;
+        }
+        else if (command == 'L') {
+            points.push_back(glm::vec2(nums[num_index], nums[num_index+1]));
+            num_index += 2;
+            commands_index++;
+        }
+        else if (command == 'C') {
+            glm::vec2 P0 = points.back();
+            glm::vec2 P1 = glm::vec2(nums[num_index], nums[num_index+1]);
+            glm::vec2 P2 = glm::vec2(nums[num_index+2], nums[num_index+3]);
+            glm::vec2 P3 = glm::vec2(nums[num_index+4], nums[num_index+5]);
+
+            // t cannot from 0.0 because that will cause same points in the points vector.
+            for (float t=0.01f; t<=1.0f; t+=0.01f) {
+                float x = (1-t)*(1-t)*(1-t)*P0.x + 3*(1-t)*(1-t)*t*P1.x + 3*(1-t)*t*t*P2.x + t*t*t*P3.x;
+                float y = (1-t)*(1-t)*(1-t)*P0.y + 3*(1-t)*(1-t)*t*P1.y + 3*(1-t)*t*t*P2.y + t*t*t*P3.y;
+                points.push_back(glm::vec2(x, y));
+            }
+            num_index += 6;
+            commands_index++;
+        }
+        else if (command == 'Q') {
+            glm::vec2 P0 = points.back();
+            glm::vec2 P1 = glm::vec2(nums[num_index], nums[num_index+1]);
+            glm::vec2 P2 = glm::vec2(nums[num_index+2], nums[num_index+3]);
+
+            // t cannot from 0.0 because that will cause same points in the points vector.
+            for (float t=0.01f; t<=1.0f; t+=0.01f) {
+                float x = (1-t)*(1-t)*P0.x + 2*(1-t)*t*P1.x + t*t*P2.x;
+                float y = (1-t)*(1-t)*P0.y + 2*(1-t)*t*P1.y + t*t*P2.y;
+                points.push_back(glm::vec2(x, y));
+            }
+            num_index += 4;
+            commands_index++;
+        }
+        else if (command == 'Z') {
+            points.push_back(points[0]);
+            commands_index++;
+        }
+        else {
+            break;
+        }
+    }
+
+    int isFill = 0; glm::vec4 fillColor;
+    std::string fillStr = node->getAttribute("fill");
+    if (fillStr != "" && fillStr != "none") {
+        isFill = 1;
+        fillColor = getFillColor(node);
+    }
+    qDebug() << "Fill" << isFill;
+    std::string strokeStr = node->getAttribute("stroke");
+    glm::vec4 strokeColor;
+    int isStroke = 0; int stroke_width;
+    if (strokeStr != "" && strokeStr != "none") {
+        isStroke = 1;
+        strokeColor = getStrokeColor(node);
+
+        if (node->getAttribute("stroke-width") == "") {
+            stroke_width = 1;
+        }
+        else {
+            stroke_width =
+            std::stoi(node->getAttribute("stroke-width"));
+        }
+    }
+
+    if (isFill) {
+        drawFilledPolygon(renderBuffer, fillColor, points);
+    }
+    if (isStroke) {
+        drawStrokePolyline(renderBuffer, strokeColor, stroke_width, points);
+    }
 }
 
 void drawPolygon(const SVGNode* node,

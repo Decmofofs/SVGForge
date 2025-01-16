@@ -13,6 +13,8 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
 
+message(STATUS "Qt6Svg location: ${Qt6Svg_DIR}")
+
 
 
 include_directories("include")

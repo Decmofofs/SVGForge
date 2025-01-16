@@ -1,0 +1,79 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Release-60511792e88552f3d4cc.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "SVGForge",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "SVGForge::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SVGForge-Release-f7785bed37bc63760ca7.json",
+					"name" : "SVGForge",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "SVGForge_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SVGForge_autogen-Release-04bf48ac0e6958067ca9.json",
+					"name" : "SVGForge_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "SVGForge_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SVGForge_autogen_timestamp_deps-Release-739294944c140ba5ce37.json",
+					"name" : "SVGForge_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/WorkSpace/SVGForge/cmake-build-release",
+		"source" : "D:/WorkSpace/SVGForge"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
