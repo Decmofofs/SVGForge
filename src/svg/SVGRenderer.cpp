@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <stdexcept>
+
 #include <cmath>
 #include <QDebug>
 #include "GlobalData.h"
@@ -109,6 +109,20 @@ inline void drawLineWithStroke(std::vector<std::vector<glm::vec4>>& renderBuffer
         }
     }
 }
+
+inline void drawBezier2(std::vector<std::vector<glm::vec4>>& renderBuffer,
+                        glm::vec4 color,
+                        glm::vec2 P0,
+                        glm::vec2 P1,
+                        glm::vec2 P2) {
+    float t = 0.0f;
+    while (t <= 1.0f) {
+        glm::vec2 Q = (1-t)*(1-t)*P0 + 2*(1-t)*t*P1 + t*t*P2;
+        fillPixel(renderBuffer, static_cast<int>(Q.x), static_cast<int>(Q.y), color);
+        t += 0.001f;
+    }
+}
+
 
 
 void drawRect(const SVGNode* node,
