@@ -1,9 +1,0 @@
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/SVGForge.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/edit_cache.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/rebuild_cache.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/list_install_components.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/install.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/install/local.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/install/strip.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/SVGForge_autogen_timestamp_deps.dir
-D:/WorkSpace/SVGForge/cmake-build-release/CMakeFiles/SVGForge_autogen.dir

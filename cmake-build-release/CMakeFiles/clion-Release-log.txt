@@ -1,6 +1,0 @@
-C:\Qt\Tools\CMake_64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.3/bin/ninja/win/x64/ninja.exe" -G Ninja -S D:\WorkSpace\SVGForge -B D:\WorkSpace\SVGForge\cmake-build-release
--- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
--- Qt6Svg location: C:/Qt/6.8.1/mingw_64/lib/cmake/Qt6Svg
--- Configuring done (1.6s)
--- Generating done (0.0s)
--- Build files have been written to: D:/WorkSpace/SVGForge/cmake-build-release

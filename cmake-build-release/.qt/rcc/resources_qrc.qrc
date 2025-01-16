@@ -1,7 +1,0 @@
-<RCC>
-  <qresource prefix="/">
-    <file alias="resources/buttons/OpenFolder.svg">D:/WorkSpace/SVGForge/resources/buttons/OpenFolder.svg</file>
-    <file alias="resources/buttons/Export.svg">D:/WorkSpace/SVGForge/resources/buttons/Export.svg</file>
-  </qresource>
-</RCC>
-
