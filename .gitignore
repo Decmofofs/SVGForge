@@ -82,3 +82,4 @@ CMakeLists.txt.user*
 /build*/
 /cmake-build-debug/
 /.VSCodeCounter/
+/cmake-build-release/
